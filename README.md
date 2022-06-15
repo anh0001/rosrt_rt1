@@ -26,6 +26,8 @@ PIN #3 of CN3(TXD pulled up to 5v) --- PIN #5(YELLOW) of Converter
 
 PIN #8 of CN3(GND) --- PIN #1(BLACK) of Converder
 
+**NOTE:Once communication line is disconnected during ROS' operation, the RT.1 keeps running. There is no automatic brake system. Please be careful.
+
 ## Software
 
 get source codes from Github repository(https://github.com/alexandrokatayama/rosrt_rt1.git )
@@ -68,3 +70,14 @@ $ rostopic echo /rosrt_rt1
 $ rosrun ros_start sample.py /mobile_base/commands/velocity:=/cmd_vel
 ```
 Then RT.1 moves forward, backward, and turn left and right.
+
+# License
+
+Copyright (c) 2022 RT.Works co., ltd.
+This software is released under the MIT License, see LICENSE.txt
+
+# Disclaimer
+
+**RT.Works co., ltd. is not responsible for any damage caused by RT.1 using with ROS or any other external device.
+There is a risk of damage to RT.1, or the colliding with surroundings or people, resulting in an unexpected serious accident.
+Please use this software with sufficient attention to safety at your own risk.
