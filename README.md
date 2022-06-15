@@ -26,7 +26,7 @@ PIN #3 of CN3(TXD pulled up to 5v) --- PIN #5(YELLOW) of Converter
 
 PIN #8 of CN3(GND) --- PIN #1(BLACK) of Converder
 
-**NOTE:Once communication line is disconnected during ROS' operation, the RT.1 keeps running. There is no automatic brake system. Please be careful.
+**NOTE:Once communication line is disconnected during ROS' operation, the RT.1 keeps running. There is no automatic brake system. Please be careful.**
 
 ## Software
 
@@ -80,4 +80,4 @@ This software is released under the MIT License, see LICENSE.txt
 
 **RT.Works co., ltd. is not responsible for any damage caused by RT.1 using with ROS or any other external device.
 There is a risk of damage to RT.1, or the colliding with surroundings or people, resulting in an unexpected serious accident.
-Please use this software with sufficient attention to safety at your own risk.
+Please use this software with sufficient attention to safety at your own risk.**
