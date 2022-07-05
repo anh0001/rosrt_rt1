@@ -219,7 +219,7 @@ static void *subTask(void *stock)
 	fd = open(receive_stock->port_, O_RDWR | O_NONBLOCK);
 if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 
-	/* UART���M */
+	/* UART送信 */
 	strcpy(uart_send_buf, "setmode dbg rtw12345\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtlr2\r\n");
@@ -258,11 +258,11 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 			}
 			else
 			{
-#define REAR_TREAD_RT1	(0.42)		/*!< �쓮�ւ̃g���b�h[m] */
+#define REAR_TREAD_RT1	(0.42)		/*!< 駆動輪のトレッド[m] */
 				speed_left = speed - rotate * REAR_TREAD_RT1 / 2.0;		/* m/s */
 				speed_right = speed + rotate * REAR_TREAD_RT1 / 2.0;		/* m/s */
 
-#define SPEED_COEFF_RT1 (311.111)	/*!< �����ϐ��ւ̕ϊ��W�� */
+#define SPEED_COEFF_RT1 (311.111)	/*!< 内部変数への変換係数 */
 				speed_left *= SPEED_COEFF_RT1;
 				speed_right *= SPEED_COEFF_RT1;
 
@@ -292,6 +292,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 					fradiu = 1000 - (int)(1000.0 * speed_right / speed_left);
 				}
 				}
+				wait_5sec_cnt = WAIT_5SEC_CNT_MAX;
 			}
 
 			if (fspeed > 2000)
@@ -318,7 +319,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 			fspeed += 2048;
 			fradiu += 2048;
 
-			/* UART���M */
+			/* UART送信 */
 			sprintf(uart_send_buf, "fspeed%c%c%c%c\r\n",
 					((fspeed / 1000) % 10) + '0',
 					((fspeed / 100) % 10) + '0',
@@ -336,7 +337,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 		}
 
 		uart_tmp_len = read(fd, uart_tmp_buf, UART_BUF_LEN);
-		if (uart_tmp_len >= 1)	/* UART��M */
+		if (uart_tmp_len >= 1)	/* UART受信 */
 		{
 			for(i=0;i<uart_tmp_len;i++)
 			{
@@ -426,7 +427,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 
 			if (wait_5sec_cnt == 0)
 			{
-				/* UART���M */
+				/* UART送信 */
 				strcpy(uart_send_buf, "setmode dbg rtw12345\r\n");
 				write3(fd, uart_send_buf, strlen(uart_send_buf));
 				strcpy(uart_send_buf, "fdrive1\r\n");
@@ -454,7 +455,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 
 			if (wait_1sec_cnt == 0)
 			{
-				/* UART���M */
+				/* UART送信 */
 				strcpy(uart_send_buf, "fdrive1\r\n");
 				write3(fd, uart_send_buf, strlen(uart_send_buf));
 				strcpy(uart_send_buf, "fturn1\r\n");
@@ -476,7 +477,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 
 				msg.velocity.linear.x = (latest_speed_left + latest_speed_right) / 2.0;
 
-#define SENSOR_GAP_RT1	(0.16)		/*!< ���̓Z���T�Ԃ̋���[m] */
+#define SENSOR_GAP_RT1	(0.16)		/*!< 圧力センサ間の距離[m] */
 				msg.handle.force.x = (latest_force_left + latest_force_right) / 2.0;
 				msg.handle.torque.z = (latest_force_right - latest_force_left) / SENSOR_GAP_RT1;
 
