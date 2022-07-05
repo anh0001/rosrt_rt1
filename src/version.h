@@ -1,8 +1,8 @@
 /***************************************************************************//**
  * @file		version.h
- * @brief		ƒo[ƒWƒ‡ƒ“”Ô†
+ * @brief		ãƒãƒ¼ã‚¸ãƒ§ãƒ³ç•ªå·
  *
- * @author		•ĞR‹MŠ°<katayama.takahiro@rtworks.co.jp>
+ * @author		ç‰‡å±±è²´å¯›<katayama.takahiro@rtworks.co.jp>
  * @par			Copyright
  * 2012-2022	RT.Works co., ltd. All rights reserved.
  *
@@ -11,6 +11,6 @@
 #ifndef _INCLUDE_VERSION_H_
 #define _INCLUDE_VERSION_H_
 
-#define VERSION_NUMBER "7.0.3"
+#define VERSION_NUMBER "7.0.4"
 
 #endif /* _INCLUDE_VERSION_H_ */
