@@ -11,7 +11,7 @@
 #include <cstring>
 #include <cmath>
 
-#define VERSION_NUMBER "2.0.1"
+#define VERSION_NUMBER "2.0.2"
 #define REAR_TREAD_RT1 0.42  // Rear tread of RT1 robot in meters
 #define SPEED_COEFF_RT1 311.111  // Speed conversion coefficient
 #define SENSOR_GAP_RT1 0.16  // Gap between pressure sensors in meters
@@ -40,6 +40,11 @@ public:
         setupUART();
         initializeRT1();
         serial_thread_ = std::thread(&RosrtRt1::serialThread, this);
+
+        // Create a timer to send sensor data requests every 5 seconds
+        sensor_request_timer_ = this->create_wall_timer(
+            std::chrono::seconds(5),
+            std::bind(&RosrtRt1::sendSensorDataRequests, this));
     }
 
     ~RosrtRt1()
@@ -75,6 +80,15 @@ private:
         }
     }
 
+    void sendSensorDataRequests()
+    {
+        sendRT1Command("mtlr2");
+        sendRT1Command("mtrr2");
+        sendRT1Command("sar2");
+        sendRT1Command("syr2");
+        sendRT1Command("sfr2");
+    }
+
     void processIncomingData()
     {
         char buffer[256];
@@ -86,40 +100,67 @@ private:
                     parseReceivedData(receive_buffer);
                     receive_len = 0;
                 } else if (buffer[i] >= 0x20) {
-                    receive_buffer[receive_len++] = buffer[i];
-                    if (receive_len >= 255) receive_len = 255;
+                    if (receive_len < sizeof(receive_buffer) - 1) {
+                        receive_buffer[receive_len++] = buffer[i];
+                    }
                 }
             }
         }
+    }
+
+    int getInt(const char* buf, int& pos)
+    {
+        int ret = 0;
+        int sign = 1;
+
+        // Skip commas or whitespace
+        while (buf[pos] == ',' || buf[pos] == ' ') {
+            pos++;
+        }
+
+        if (buf[pos] == '-') {
+            sign = -1;
+            pos++;
+        }
+
+        while (buf[pos] >= '0' && buf[pos] <= '9') {
+            ret = ret * 10 + (buf[pos] - '0');
+            pos++;
+        }
+
+        // Skip commas or whitespace after number
+        while (buf[pos] == ',' || buf[pos] == ' ') {
+            pos++;
+        }
+
+        return sign * ret;
     }
 
     void parseReceivedData(const char* data)
     {
         if (data[0] == 'm' && data[1] == 't') {
             if (data[2] == 'l') {
-                latest_speed_left_ = std::atoi(data + 3) / 3600.0;  // m/h to m/s
+                int pos = 3;
+                latest_speed_left_ = getInt(data, pos) / 3600.0;  // m/h to m/s
             } else if (data[2] == 'r') {
-                latest_speed_right_ = std::atoi(data + 3) / 3600.0;  // m/h to m/s
+                int pos = 3;
+                latest_speed_right_ = getInt(data, pos) / 3600.0;  // m/h to m/s
             }
         } else if (data[0] == 's') {
-            if (data[1] == 'a') {
+            if (data[1] == 'a') {  // Accelerometer data
                 int pos = 2;
-                std::strtol(data + pos, nullptr, 10);  // Skip first two values
-                std::strtol(data + pos, nullptr, 10);
-                sensor_data_.accel.linear.y = std::strtol(data + pos, nullptr, 10) / -1000.0;
-                std::strtol(data + pos, nullptr, 10);
-                std::strtol(data + pos, nullptr, 10);
-                sensor_data_.accel.linear.x = std::strtol(data + pos, nullptr, 10) / 1000.0;
-                sensor_data_.accel.linear.z = std::strtol(data + pos, nullptr, 10) / 1000.0;
-            } else if (data[1] == 'y') {
+                sensor_data_.accel.linear.x = getInt(data, pos) / 1000.0;  // mm/s^2 to m/s^2
+                sensor_data_.accel.linear.y = getInt(data, pos) / -1000.0;
+                sensor_data_.accel.linear.z = getInt(data, pos) / 1000.0;
+            } else if (data[1] == 'y') {  // Gyroscope data
                 int pos = 2;
-                sensor_data_.velocity.angular.y = std::strtol(data + pos, nullptr, 10) / -10000.0;
-                sensor_data_.velocity.angular.x = std::strtol(data + pos, nullptr, 10) / 10000.0;
-                sensor_data_.velocity.angular.z = std::strtol(data + pos, nullptr, 10) / 10000.0;
-            } else if (data[1] == 'f') {
+                sensor_data_.velocity.angular.x = getInt(data, pos) / 10000.0;  // 0.0001rad/s to rad/s
+                sensor_data_.velocity.angular.y = getInt(data, pos) / -10000.0;
+                sensor_data_.velocity.angular.z = getInt(data, pos) / 10000.0;
+            } else if (data[1] == 'f') {  // Force sensor data
                 int pos = 2;
-                latest_force_left_ = std::strtol(data + pos, nullptr, 10) / 1000.0;
-                latest_force_right_ = std::strtol(data + pos, nullptr, 10) / 1000.0;
+                latest_force_left_ = getInt(data, pos) / 1000.0;  // mN to N
+                latest_force_right_ = getInt(data, pos) / 1000.0;  // mN to N
             }
         }
     }
@@ -130,7 +171,7 @@ private:
         if (!twist_queue_.empty()) {
             auto twist = twist_queue_.front();
             twist_queue_.pop();
-            
+
             int fspeed, fradiu;
             convertTwistToRT1Commands(twist, fspeed, fradiu);
 
@@ -246,6 +287,7 @@ private:
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
     rclcpp::Publisher<rosrt_rt1::msg::Rt1Sensor>::SharedPtr sensor_pub_;
+    rclcpp::TimerBase::SharedPtr sensor_request_timer_;
     std::string port_;
     int fd_;
     std::thread serial_thread_;
