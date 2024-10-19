@@ -26,6 +26,10 @@ public:
         this->declare_parameter("port", "/dev/ttyUSB0");
         port_ = this->get_parameter("port").as_string();
 
+        // TODO
+        this->declare_parameter("mode", "sensor");
+        mode = this->get_parameter("mode").as_string();
+        
         twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
             "cmd_vel", 10, std::bind(&RosrtRt1::twistCallback, this, std::placeholders::_1));
         sensor_pub_ = this->create_publisher<rosrt_rt1::msg::Rt1Sensor>("rosrt_rt1", 10);
@@ -39,8 +43,18 @@ public:
 
         setupUART();
         // TODO:
-        // - We comment this to only get sensors data without sending command to move
-        // initializeRT1();
+        if (mode == "teleop") {
+            RCLCPP_INFO(this->get_logger(), "Initializing RT1 for teleop mode");
+            initializeRT1();
+        } else {
+            sendRT1Command("fdrive0");
+            sendRT1Command("mtlr1");
+            sendRT1Command("mtrr1");
+            sendRT1Command("sar1");
+            sendRT1Command("syr1");
+            sendRT1Command("sfr1");
+            RCLCPP_INFO(this->get_logger(), "Running in sensor reading mode");
+        }
         serial_thread_ = std::thread(&RosrtRt1::serialThread, this);
 
         // Create a timer to send sensor data requests every 5 seconds
@@ -76,7 +90,10 @@ private:
     {
         while (rclcpp::ok()) {
             processIncomingData();
-            sendTwistCommands();
+            // TODO:
+            if (mode == "teleop") {
+                sendTwistCommands();
+            } 
             publishSensorData();
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
@@ -291,6 +308,7 @@ private:
     rclcpp::Publisher<rosrt_rt1::msg::Rt1Sensor>::SharedPtr sensor_pub_;
     rclcpp::TimerBase::SharedPtr sensor_request_timer_;
     std::string port_;
+    std::string mode;
     int fd_;
     std::thread serial_thread_;
     std::queue<geometry_msgs::msg::Twist> twist_queue_;
