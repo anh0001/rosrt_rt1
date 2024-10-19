@@ -38,7 +38,9 @@ public:
         }
 
         setupUART();
-        initializeRT1();
+        // TODO:
+        // - We comment this to only get sensors data without sending command to move
+        // initializeRT1();
         serial_thread_ = std::thread(&RosrtRt1::serialThread, this);
 
         // Create a timer to send sensor data requests every 5 seconds
