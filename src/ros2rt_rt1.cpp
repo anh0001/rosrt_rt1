@@ -59,7 +59,7 @@ public:
 
         // Create a timer to send sensor data requests every 5 seconds
         sensor_request_timer_ = this->create_wall_timer(
-            std::chrono::seconds(5),
+            std::chrono::seconds(1),
             std::bind(&RosrtRt1::sendSensorDataRequests, this));
     }
 
